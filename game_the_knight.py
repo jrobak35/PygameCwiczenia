@@ -22,7 +22,7 @@ fire_image = pygame.image.load(r'C:\Users\robak\VSCode\pythonGamesLearning\fireb
 
 # Ładowanie księżniczki
 princess_image = pygame.image.load(r'C:\Users\robak\VSCode\pythonGamesLearning\princess.bmp')
-princess_image.set_colorkey((255, 255, 255)) # Tu też ustawienie białego koloru na przezroczysty
+princess_image.set_colorkey((0, 0, 0)) # Tu też ustawienie białego koloru na przezroczysty
 
 # Tworzenie klasy dla rycerza
 class Knight(pygame.sprite.Sprite):
@@ -97,9 +97,10 @@ class Dragon(pygame.sprite.Sprite):
 class Princess(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.transform.scale(princess_image, (princess_image.get_width() // 2, princess_image.get_height() // 2))  # Zmniejszenie księżniczki
+        self.image = pygame.transform.scale(princess_image, (princess_image.get_width() // 2, princess_image.get_height() // 2)) # Zmniejszenie księżniczki 
         self.rect = self.image.get_rect()
         self.rect.center = (dragon.rect.centerx, dragon.rect.centery)  # Początkowa pozycja księżniczki nad smokiem
+        self.start_y = 150  # Ustawienie pozycji początkowej księżniczki
         self.vel_y = 0  # Prędkość opadania
 
     def update(self):
@@ -111,6 +112,9 @@ class Princess(pygame.sprite.Sprite):
         if self.rect.bottom > 680:  # Jeśli księżniczka dotknęła ziemi
             self.rect.bottom = 680  # Ustawiamy ją na ziemi
             self.vel_y = 0  # Resetujemy prędkość opadania
+
+            # Księżniczka znika i zaczyna opadać od nowa
+            self.rect.center = (dragon.rect.centerx, self.start_y)  # Ponownie ustawiamy ją nad smokiem
 
 # Tworzenie grupy sprite'ów
 all_sprites = pygame.sprite.Group()
