@@ -2,18 +2,23 @@ import pygame
 
 pygame.init()
 
-# Ustawienia okna
-screen = pygame.display.set_mode((840, 680))
+# Uzyskanie rozdzielczości ekranu
+info = pygame.display.Info()
+screen_width = info.current_w  # Szerokość ekranu
+screen_height = info.current_h  # Wysokość ekranu
+
+# Tworzymy okno z rozmiarem odpowiadającym ekranowi, ale z możliwością zamknięcia (bez pełnego ekranu)
+screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)  # Okno jest teraz zmienne, ale nie pełnoekranowe
 pygame.display.set_caption('The Knight')
 
 # Załadowanie i skalowanie obrazka jako tła
 background = pygame.image.load(r'C:\Users\robak\VSCode\pythonGamesLearning\castle.jpg')
-background = pygame.transform.scale(background, (840, 680))
+background = pygame.transform.scale(background, (screen_width, screen_height))
 
 # Ładowanie obrazów duszków (sprites)
 knight_image = pygame.image.load(r'C:\Users\robak\VSCode\pythonGamesLearning\Knight.bmp')
 
-# Załadowanie obrazu smoka i ustawienie białego tła na przezroczyste
+# Ładowanie obrazu smoka i ustawienie białego tła na przezroczyste
 dragon_image = pygame.image.load(r'C:\Users\robak\VSCode\pythonGamesLearning\dragon.bmp')
 dragon_image.set_colorkey((255, 255, 255))  # Ustawienie białego koloru na przezroczysty
 
@@ -22,17 +27,16 @@ fire_image = pygame.image.load(r'C:\Users\robak\VSCode\pythonGamesLearning\fireb
 
 # Ładowanie księżniczki
 princess_image = pygame.image.load(r'C:\Users\robak\VSCode\pythonGamesLearning\princess.bmp')
-princess_image.set_colorkey((0, 0, 0)) # Tu też ustawienie białego koloru na przezroczysty
+princess_image.set_colorkey((0, 0, 0))  # Tu też ustawienie białego koloru na przezroczysty
 
 # Tworzenie klasy dla rycerza
 class Knight(pygame.sprite.Sprite):
     def __init__(self):
-        super().__init__()  
+        super().__init__()
         self.image = knight_image
-        self.rect = self.image.get_rect() 
-        self.rect.center = (440, 600)  # Pozycja początkowa
+        self.rect = self.image.get_rect()
+        self.rect.center = (screen_width // 2, screen_height - 100)  # Pozycja początkowa
         self.speed = 5  # Szybkość poruszania się
-        # self.dx = self.speed  # Prędkość w poziomie
         self.is_jumping = False  # Flaga informująca, czy rycerz skacze
         self.jump_height = 15  # Wysokość skoku
         self.vel_y = 0  # Prędkość poruszania się rycerza w pionie (w górę lub w dół)
@@ -48,7 +52,7 @@ class Knight(pygame.sprite.Sprite):
             self.image = pygame.transform.flip(knight_image, True, False)  # Obracanie w lewo
 
         # Poruszanie w prawo
-        if keys[pygame.K_RIGHT] and self.rect.right < 840:
+        if keys[pygame.K_RIGHT] and self.rect.right < screen_width:
             self.rect.x += self.speed  # Poruszanie w prawo
             self.image = knight_image  # Normalna orientacja (twarzą w prawo)
 
@@ -67,12 +71,16 @@ class Knight(pygame.sprite.Sprite):
                 self.is_jumping = False
                 self.vel_y = 0  # Reset prędkości pionowej
 
+        # Detekcja kolizji z księżniczką
+        if self.rect.colliderect(princess.rect):
+            princess.rect.center = (dragon.rect.centerx, dragon.rect.centery) # Ponowne ustawienie księżniczki
+
 # Tworzenie klasy smoka
 class Dragon(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = dragon_image #.convert_alpha()  # Używamy przezroczystości, jeśli jest dostępna
-        self.rect = self.image.get_rect()  
+        self.image = dragon_image
+        self.rect = self.image.get_rect()
         self.rect.center = (90, 100)  # Pozycja początkowa smoka
         self.speed = 5  # Szybkość poruszania się
         self.moving_right = True  # Zmienna kontrolująca kierunek ruchu smoka
@@ -84,7 +92,35 @@ class Dragon(pygame.sprite.Sprite):
             self.rect.x -= self.speed  # Ruch smoka w lewo
 
         # Sprawdzamy, czy smok zniknął z prawej strony ekranu
-        if self.rect.right > 840:  # Jeśli smok opuścił ekran po prawej stronie
+        if self.rect.right > screen_width:  # Jeśli smok opuścił ekran po prawej stronie
+            self.moving_right = False  # Zmieniamy kierunek na lewy
+            self.image = pygame.transform.flip(dragon_image, True, False)  # Obracamy smoka w lewo
+
+        # Sprawdzamy, czy smok zniknął z lewej strony ekranu
+        elif self.rect.left <= 0:  # Jeśli smok opuścił ekran po lewej stronie
+            self.moving_right = True  # Zmieniamy kierunek na prawy
+            self.image = pygame.transform.flip(dragon_image, False , False)  # Obracamy smoka w prawo
+
+# Tworzenie klasy drugiego smoka
+class SecondDragon(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = dragon_image
+        self.rect = self.image.get_rect()
+        self.rect.center = (screen_width - 90, 220)  # Pozycja początkowa smoka
+        self.speed = 5  # Szybkość poruszania się
+        self.moving_right = False  # Zmienna kontrolująca kierunek ruchu smoka
+
+    def update(self):
+        if self.moving_right:
+            self.rect.x += self.speed  # Ruch smoka w prawo
+            self.image = pygame.transform.flip(dragon_image, False, False)  # Obraz smoka zwrócony w prawo
+        else:
+            self.rect.x -= self.speed  # Ruch smoka w lewo
+            self.image = pygame.transform.flip(dragon_image, True, False)  # Obraz smoka zwrócony w lewo
+
+        # Sprawdzamy, czy smok zniknął z prawej strony ekranu
+        if self.rect.right > screen_width:  # Jeśli smok opuścił ekran po prawej stronie
             self.moving_right = False  # Zmieniamy kierunek na lewy
             self.image = pygame.transform.flip(dragon_image, True, False)  # Obracamy smoka w lewo
 
@@ -109,8 +145,8 @@ class Princess(pygame.sprite.Sprite):
         self.rect.y += self.vel_y
 
         # Sprawdzamy, czy księżniczka opadła na ziemię
-        if self.rect.bottom > 680:  # Jeśli księżniczka dotknęła ziemi
-            self.rect.bottom = 680  # Ustawiamy ją na ziemi
+        if self.rect.bottom > screen_height - 100:  # Jeśli księżniczka dotknęła ziemi
+            self.rect.bottom = screen_height - 100  # Ustawiamy ją na ziemi
             self.vel_y = 0  # Resetujemy prędkość opadania
 
             # Księżniczka znika i zaczyna opadać od nowa
@@ -123,7 +159,8 @@ all_sprites = pygame.sprite.Group()
 knight = Knight()
 dragon = Dragon()
 princess = Princess()
-all_sprites.add(knight, dragon, princess)
+second_dragon = SecondDragon()  # Dodanie drugiego smoka
+all_sprites.add(knight, dragon, princess, second_dragon)
 
 # Główna pętla gry
 running = True
@@ -135,7 +172,10 @@ while running:
     # Zaktualizuj sprite'y (ruch rycerza i smoka)
     all_sprites.update()
 
-    # Narysuj tło na ekranie
+    # Zaktualizuj tło (w przypadku zmiany rozdzielczości ekranu)
+    background = pygame.transform.scale(background, (screen_width, screen_height))
+
+    # Zaktualizuj ekran
     screen.blit(background, (0, 0))
 
     # Rysowanie sprite'ów na ekranie
